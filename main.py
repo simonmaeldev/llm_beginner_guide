@@ -7,6 +7,8 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
 from rich.syntax import Syntax
+from aider.coders import Coder
+from aider.models import Model
 
 console = Console()
 
@@ -115,6 +117,38 @@ def get_git_diff():
     except subprocess.CalledProcessError as e:
         return f"Error occurred: {e.stderr if e.stderr else e.stdout}"
 
+def apply_suggestions(branch_name: str, suggestions: str, files_to_edit: list):
+    try:
+        # Create new branch
+        subprocess.run(
+            ['git', 'checkout', '-b', f'{branch_name}_suggestions'],
+            check=True
+        )
+        
+        # Initialize aider
+        model = Model("deepseek-chat", api_base="https://api.deepseek.com")
+        coder = Coder.create(main_model=model, fnames=files_to_edit)
+        
+        # Apply suggestions
+        result = coder.run(suggestions)
+        
+        # Commit changes
+        subprocess.run(
+            ['git', 'add', '.'],
+            check=True
+        )
+        subprocess.run(
+            ['git', 'commit', '-m', 'Applied code review suggestions'],
+            check=True
+        )
+        
+        return result
+        
+    except subprocess.CalledProcessError as e:
+        return f"Git error occurred: {str(e)}"
+    except Exception as e:
+        return f"Error applying suggestions: {str(e)}"
+
 if __name__ == "__main__":
     # Get git diff
     console.print(Panel("Getting git diff...", style="bold blue"))
@@ -155,3 +189,17 @@ if __name__ == "__main__":
     # Send query to LLM
     console.print(Panel("Sending request to LLM...", style="bold yellow"))
     response = send_query(prompt)
+    
+    # Get list of files to edit from the diff
+    files_to_edit = list(get_remote_files_content(git_diff).keys()
+    
+    # Apply suggestions
+    console.print(Panel("Applying suggestions...", style="bold blue"))
+    branch_name = subprocess.check_output(
+        ['git', 'rev-parse', '--abbrev-ref', 'HEAD'],
+        stderr=subprocess.STDOUT
+    ).decode().strip()
+    
+    apply_result = apply_suggestions(branch_name, response, files_to_edit)
+    console.print(Panel("Application result:", style="bold green"))
+    console.print(apply_result)
