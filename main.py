@@ -2,6 +2,12 @@ import os
 import subprocess
 from pathlib import Path
 from openai import OpenAI
+from rich.console import Console
+from rich.panel import Panel
+from rich.text import Text
+from rich.syntax import Syntax
+
+console = Console()
 
 def send_query(prompt: str) -> str:
     try:
@@ -15,8 +21,6 @@ def send_query(prompt: str) -> str:
             base_url="https://api.deepseek.com"
         )
         
-        print("\nSending request...\n")
-        
         response = client.chat.completions.create(
             model="deepseek-chat",
             messages=[
@@ -26,19 +30,21 @@ def send_query(prompt: str) -> str:
             stream=True
         )
         
-        # Stream the response
-        print("Response from LLM:\n")
+        # Stream the response with Rich
+        console.print(Panel("LLM Response:", style="bold green"))
         full_response = ""
-        for chunk in response:
-            content = chunk.choices[0].delta.content
-            if content:
-                print(content, end="", flush=True)
-                full_response += content
-                
-        print("\n")
+        with console.status("[bold green]Receiving response...[/bold green]"):
+            for chunk in response:
+                content = chunk.choices[0].delta.content
+                if content:
+                    console.print(content, end="", style="dim", highlight=False)
+                    full_response += content
+                    
+        console.print("\n")
         return full_response
         
     except Exception as e:
+        console.print(f"[red]Error occurred: {str(e)}[/red]")
         return f"Error occurred: {str(e)}"
 
 def get_git_diff():
@@ -81,27 +87,29 @@ def get_git_diff():
 
 if __name__ == "__main__":
     # Get git diff
-    print("Getting git diff...\n")
+    console.print(Panel("Getting git diff...", style="bold blue"))
+    
     git_diff = get_git_diff()
     
     # Show the diff
-    print("Git diff:\n")
-    print(git_diff)
-    print("\n" + "="*80 + "\n")
+    console.print(Panel("Git diff:", style="bold green"))
+    console.print(Syntax(git_diff, "diff", theme="monokai", line_numbers=True))
+    console.print(Panel.fit("", style="dim"))
     
     # Load prompt template
     try:
         prompt_template = Path("prompt.txt").read_text()
     except Exception as e:
-        print(f"Error loading prompt template: {e}")
+        console.print(f"[red]Error loading prompt template: {e}[/red]")
         exit(1)
     
     # Format prompt with git diff
     if git_diff.startswith("Error"):
-        print(git_diff)
+        console.print(f"[red]{git_diff}[/red]")
         exit(1)
         
     prompt = prompt_template.format(git_diff=git_diff)
     
     # Send query to LLM
+    console.print(Panel("Sending request to LLM...", style="bold yellow"))
     response = send_query(prompt)
