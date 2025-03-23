@@ -125,7 +125,7 @@ def apply_suggestions(branch_name: str, suggestions: str, files_to_edit: list):
             check=True
         )
         
-        model = Model("deepseek-chat")
+        model = Model("deepseek/deepseek-chat")
         coder = Coder.create(main_model=model, fnames=files_to_edit)
         
         # Apply suggestions
