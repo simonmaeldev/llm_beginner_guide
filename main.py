@@ -191,7 +191,7 @@ if __name__ == "__main__":
     response = send_query(prompt)
     
     # Get list of files to edit from the diff
-    files_to_edit = list(get_remote_files_content(git_diff).keys()
+    files_to_edit = list(get_remote_files_content(git_diff).keys())
     
     # Apply suggestions
     console.print(Panel("Applying suggestions...", style="bold blue"))
