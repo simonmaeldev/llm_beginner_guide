@@ -15,16 +15,28 @@ def send_query(prompt: str) -> str:
             base_url="https://api.deepseek.com"
         )
         
+        print("\nSending request...\n")
+        
         response = client.chat.completions.create(
             model="deepseek-chat",
             messages=[
                 {"role": "system", "content": "You are a helpful assistant"},
                 {"role": "user", "content": prompt},
             ],
-            stream=False
+            stream=True
         )
         
-        return response.choices[0].message.content
+        # Stream the response
+        print("Response from LLM:\n")
+        full_response = ""
+        for chunk in response:
+            content = chunk.choices[0].delta.content
+            if content:
+                print(content, end="", flush=True)
+                full_response += content
+                
+        print("\n")
+        return full_response
         
     except Exception as e:
         return f"Error occurred: {str(e)}"
@@ -69,7 +81,13 @@ def get_git_diff():
 
 if __name__ == "__main__":
     # Get git diff
+    print("Getting git diff...\n")
     git_diff = get_git_diff()
+    
+    # Show the diff
+    print("Git diff:\n")
+    print(git_diff)
+    print("\n" + "="*80 + "\n")
     
     # Load prompt template
     try:
@@ -87,4 +105,3 @@ if __name__ == "__main__":
     
     # Send query to LLM
     response = send_query(prompt)
-    print(response)
