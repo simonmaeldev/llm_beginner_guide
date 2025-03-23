@@ -1,5 +1,6 @@
 import os
 import subprocess
+import json
 from pathlib import Path
 from openai import OpenAI
 from rich.console import Console
@@ -21,6 +22,10 @@ def send_query(prompt: str) -> str:
             base_url="https://api.deepseek.com"
         )
         
+        console.print(Panel("LLM Response:", style="bold green"))
+        full_response = ""
+        
+        # Make the streaming request
         response = client.chat.completions.create(
             model="deepseek-chat",
             messages=[
@@ -30,16 +35,15 @@ def send_query(prompt: str) -> str:
             stream=True
         )
         
-        # Stream the response with Rich
-        console.print(Panel("LLM Response:", style="bold green"))
-        full_response = ""
-        with console.status("[bold green]Receiving response...[/bold green]"):
-            for chunk in response:
+        # Process the stream
+        for chunk in response:
+            if chunk.choices[0].delta.content:
                 content = chunk.choices[0].delta.content
-                if content:
-                    console.print(content, end="", style="dim", highlight=False)
-                    full_response += content
-                    
+                # Print to console
+                console.print(content, end="", style="dim", highlight=False)
+                # Append to full response
+                full_response += content
+                
         console.print("\n")
         return full_response
         
