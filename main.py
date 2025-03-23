@@ -102,7 +102,7 @@ def get_git_diff():
         
         # Get diff between local and remote
         diff_output = subprocess.check_output(
-            ['git', 'diff', f'HEAD..origin/{branch_name}'],
+            ['git', 'diff', f'origin/{branch_name}..HEAD'],
             stderr=subprocess.STDOUT
         ).decode()
         
