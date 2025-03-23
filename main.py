@@ -8,8 +8,24 @@ def get_git_diff():
             stderr=subprocess.STDOUT
         ).decode().strip()
         
+        # Check if remote exists
+        try:
+            subprocess.check_output(
+                ['git', 'config', '--get', 'remote.origin.url'],
+                stderr=subprocess.STDOUT
+            )
+        except subprocess.CalledProcessError:
+            return "Error: No remote 'origin' configured. Please set up a remote repository."
+        
         # Fetch updates from remote
-        subprocess.run(['git', 'fetch', 'origin'], check=True)
+        fetch_result = subprocess.run(
+            ['git', 'fetch', 'origin'],
+            capture_output=True,
+            text=True
+        )
+        
+        if fetch_result.returncode != 0:
+            return f"Error fetching from remote: {fetch_result.stderr}"
         
         # Get diff between local and remote
         diff_output = subprocess.check_output(
@@ -17,10 +33,10 @@ def get_git_diff():
             stderr=subprocess.STDOUT
         ).decode()
         
-        return diff_output
+        return diff_output if diff_output else "No differences found"
     
     except subprocess.CalledProcessError as e:
-        return f"Error occurred: {e.output.decode()}"
+        return f"Error occurred: {e.stderr if e.stderr else e.stdout}"
 
 diff = get_git_diff()
 print(diff)
