@@ -21,3 +21,6 @@ def get_git_diff():
     
     except subprocess.CalledProcessError as e:
         return f"Error occurred: {e.output.decode()}"
+
+diff = get_git_diff()
+print(diff)
