@@ -47,6 +47,32 @@ def send_query(prompt: str) -> str:
         console.print(f"[red]Error occurred: {str(e)}[/red]")
         return f"Error occurred: {str(e)}"
 
+def get_remote_files_content(diff_output: str) -> dict:
+    """Get the content of all files in the diff from remote"""
+    file_contents = {}
+    
+    # Extract changed files from diff
+    changed_files = set()
+    for line in diff_output.splitlines():
+        if line.startswith("diff --git"):
+            # Extract filename after b/
+            file_path = line.split(" b/")[1]
+            changed_files.add(file_path)
+    
+    # Get content of each file from remote
+    for file_path in changed_files:
+        try:
+            content = subprocess.check_output(
+                ['git', 'show', f'origin/HEAD:{file_path}'],
+                stderr=subprocess.STDOUT
+            ).decode()
+            file_contents[file_path] = content
+        except subprocess.CalledProcessError:
+            # File might be new, so no remote content
+            file_contents[file_path] = None
+    
+    return file_contents
+
 def get_git_diff():
     try:
         # Get current branch name
@@ -88,8 +114,21 @@ def get_git_diff():
 if __name__ == "__main__":
     # Get git diff
     console.print(Panel("Getting git diff...", style="bold blue"))
-    
     git_diff = get_git_diff()
+    
+    if git_diff.startswith("Error"):
+        console.print(f"[red]{git_diff}[/red]")
+        exit(1)
+    
+    # Get remote files content
+    console.print(Panel("Getting remote files content...", style="bold blue"))
+    files_before = get_remote_files_content(git_diff)
+    
+    # Format files content for prompt
+    files_before_str = "\n\n".join(
+        f"File: {path}\n{content if content else 'New file'}"
+        for path, content in files_before.items()
+    )
     
     # Show the diff
     console.print(Panel("Git diff:", style="bold green"))
@@ -103,12 +142,11 @@ if __name__ == "__main__":
         console.print(f"[red]Error loading prompt template: {e}[/red]")
         exit(1)
     
-    # Format prompt with git diff
-    if git_diff.startswith("Error"):
-        console.print(f"[red]{git_diff}[/red]")
-        exit(1)
-        
-    prompt = prompt_template.format(git_diff=git_diff)
+    # Format prompt with git diff and files content
+    prompt = prompt_template.format(
+        git_diff=git_diff,
+        files_before=files_before_str
+    )
     
     # Send query to LLM
     console.print(Panel("Sending request to LLM...", style="bold yellow"))

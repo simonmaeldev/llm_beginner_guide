@@ -1,4 +1,10 @@
-act as a senior python developer. Your goal is to review the following git diff:
+act as a senior python developer. Your goal is to review the following git diff. Here are the files before the changes:
+
+<files_before>
+{files_before}
+</files_before>
+
+And here is the git diff showing the changes:
 
 <git_diff>
 {git_diff}
