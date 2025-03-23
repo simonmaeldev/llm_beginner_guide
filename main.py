@@ -1,5 +1,6 @@
 import os
 import subprocess
+from pathlib import Path
 from openai import OpenAI
 
 def send_query(prompt: str) -> str:
@@ -67,11 +68,23 @@ def get_git_diff():
         return f"Error occurred: {e.stderr if e.stderr else e.stdout}"
 
 if __name__ == "__main__":
-    # Example usage
-    diff = get_git_diff()
-    print(diff)
+    # Get git diff
+    git_diff = get_git_diff()
     
-    # Example query
-    query = "Explain quantum computing in simple terms"
-    response = send_query(query)
+    # Load prompt template
+    try:
+        prompt_template = Path("prompt.txt").read_text()
+    except Exception as e:
+        print(f"Error loading prompt template: {e}")
+        exit(1)
+    
+    # Format prompt with git diff
+    if git_diff.startswith("Error"):
+        print(git_diff)
+        exit(1)
+        
+    prompt = prompt_template.format(git_diff=git_diff)
+    
+    # Send query to LLM
+    response = send_query(prompt)
     print(response)
