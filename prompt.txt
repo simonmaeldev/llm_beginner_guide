@@ -1,0 +1,11 @@
+act as a senior python developer. Your goal is to review the following git diff:
+
+<git_diff>
+{git_diff}
+</git_diff>
+
+think step by step.
+1. Understand this code deeply
+2. What did the developer intended to do?
+3. Critic this code, but be fair. State all the issues you see with a severity as a number from 1 to 5, 1 being highly critic (security issue), 5 being a nicer way to code this (syntax, word choice..) but not necessary at all
+4. For each issue, give the user a suggestion on how to fix this. Format this in a <<<<<SEARCH <code_to_change> ====== <your_suggestion> >>>>>>REPLACE format
