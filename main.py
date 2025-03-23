@@ -132,15 +132,13 @@ def apply_suggestions(branch_name: str, suggestions: str, files_to_edit: list):
         # Apply suggestions
         result = coder.run(suggestions)
         
-        # Commit changes
-        subprocess.run(
-            ['git', 'add', '.'],
-            check=True
-        )
-        subprocess.run(
-            ['git', 'commit', '-m', 'Applied code review suggestions'],
-            check=True
-        )
+        # Show status instead of committing
+        console.print(Panel("Changes applied. Here's the git status:", style="bold green"))
+        status = subprocess.check_output(
+            ['git', 'status'],
+            stderr=subprocess.STDOUT
+        ).decode()
+        console.print(Syntax(status, "bash", theme="monokai"))
         
         return result
         
