@@ -125,12 +125,7 @@ def apply_suggestions(branch_name: str, suggestions: str, files_to_edit: list):
             check=True
         )
         
-        # Initialize aider with DeepSeek model
-        client = OpenAI(
-            api_key=os.getenv('DEEPSEEK_API_KEY'),
-            base_url="https://api.deepseek.com"
-        )
-        model = Model("deepseek-chat", client=client)
+        model = Model("deepseek-chat")
         coder = Coder.create(main_model=model, fnames=files_to_edit)
         
         # Apply suggestions
