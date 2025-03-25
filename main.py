@@ -155,7 +155,7 @@ def apply_suggestions(branch_name: str, suggestions: str, files_to_edit: list):
             ["git", "checkout", "-b", f"{branch_name}_suggestions"], check=True,
         )
 
-        model = Model("deepseek/deepseek-coder")
+        model = Model("deepseek/deepseek-chat")
         coder = Coder.create(main_model=model, fnames=files_to_edit)
 
         # Validate and apply suggestions
