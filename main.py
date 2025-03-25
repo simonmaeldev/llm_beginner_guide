@@ -125,37 +125,8 @@ def get_git_diff():
         return error_msg
 
 
-def apply_suggestions(branch_name: str, suggestions: str, files_to_edit: list):
+def apply_suggestions(suggestions: str, files_to_edit: list):
     try:
-        # Check if branch exists and delete it if it does
-        branch_exists = (
-            subprocess.run(
-                ["git", "show-ref", "--quiet", f"refs/heads/{branch_name}_suggestions"], check=False,
-            ).returncode
-            == 0
-        )
-
-        if branch_exists:
-            console.print(
-                Panel(
-                    f"Branch {branch_name}_suggestions already exists - deleting it...",
-                    style="bold yellow",
-                ),
-            )
-            subprocess.run(
-                ["git", "branch", "-D", f"{branch_name}_suggestions"], check=True,
-            )
-
-        # Create new branch
-        console.print(
-            Panel(
-                f"Creating new branch {branch_name}_suggestions...", style="bold blue",
-            ),
-        )
-        subprocess.run(
-            ["git", "checkout", "-b", f"{branch_name}_suggestions"], check=True,
-        )
-
         model = Model("deepseek/deepseek-chat")
         coder = Coder.create(main_model=model, fnames=files_to_edit, auto_commits=False)
 
@@ -235,7 +206,7 @@ def apply_changes(response: str, git_diff: str) -> None:
         .strip()
     )
 
-    apply_result = apply_suggestions(branch_name, response, files_to_edit)
+    apply_result = apply_suggestions(response, files_to_edit)
     console.print(Panel("Application result:", style="bold green"))
     console.print(apply_result)
 
