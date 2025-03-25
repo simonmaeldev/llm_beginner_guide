@@ -10,9 +10,21 @@ A command-line tool that uses DeepSeek's LLM to analyze git diffs and suggest co
 - Git integration for change management
 
 ## Requirements:
-- Python 3.8+
+- Python 3.12+
 - Git installed
 - DEEPSEEK_API_KEY environment variable set
+
+## Dependencies:
+Managed using [uv](https://github.com/astral-sh/uv):
+- aider-chat>=0.78.0  
+- openai>=1.66.3
+- pyyaml>=6.0.2  
+- rich>=13.9.4
+
+Install dependencies with:
+```bash
+uv pip install -e .
+```
 
 ## Usage:
 1. Make code changes locally
