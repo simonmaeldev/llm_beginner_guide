@@ -156,7 +156,7 @@ def apply_suggestions(branch_name: str, suggestions: str, files_to_edit: list):
         )
 
         model = Model("deepseek/deepseek-chat")
-        coder = Coder.create(main_model=model, fnames=files_to_edit)
+        coder = Coder.create(main_model=model, fnames=files_to_edit, auto_commits=False)
 
         # Validate and apply suggestions
         console.print(Panel("LLM Suggestions:", style="bold yellow"))
