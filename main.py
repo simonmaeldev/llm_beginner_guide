@@ -133,10 +133,10 @@ def apply_suggestions(suggestions: str, files_to_edit: list):
         # Validate and apply suggestions
         console.print(Panel("LLM Suggestions:", style="bold yellow"))
         console.print(Syntax(suggestions, "python", theme="monokai"))
-        if input("Apply these suggestions? (y/n): ").lower() == "y":
-            result = coder.run(get_prompt_value("system.message") + suggestions)
-        else:
+        if input("Apply these suggestions? (y/n): ").lower() == "n":
             result = "Suggestions not applied - user declined"
+        else:
+            result = coder.run(get_prompt_value("system.message") + suggestions)
 
         # Show status instead of committing
         console.print(
