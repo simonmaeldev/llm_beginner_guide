@@ -162,10 +162,7 @@ def apply_suggestions(branch_name: str, suggestions: str, files_to_edit: list):
         console.print(Panel("LLM Suggestions:", style="bold yellow"))
         console.print(Syntax(suggestions, "python", theme="monokai"))
         if input("Apply these suggestions? (y/n): ").lower() == "y":
-            import yaml
-            with open("prompt.yaml") as f:
-                prompts = yaml.safe_load(f)
-            result = coder.run(prompts["system_msg"] + suggestions)
+            result = coder.run(get_prompt_value("system_msg") + suggestions)
         else:
             result = "Suggestions not applied - user declined"
 
@@ -215,8 +212,14 @@ def prepare_prompt(git_diff: str, files_before: dict[str, str | None]) -> str:
         with open("prompt.yaml") as f:
             prompts = yaml.safe_load(f)
         prompt_template = prompts["prompt_template"]
-    except Exception as e:
-        console.print(f"[red]Error loading prompt template: {e}[/red]")
+    except FileNotFoundError:
+        console.print("[red]Error: prompt.yaml file not found[/red]")
+        exit(1)
+    except yaml.YAMLError as e:
+        console.print(f"[red]Error parsing YAML: {e}[/red]")
+        exit(1)
+    except KeyError:
+        console.print("[red]Error: 'prompt_template' key not found in prompt.yaml[/red]")
         exit(1)
 
     return prompt_template.format(git_diff=git_diff, files_before=files_before_str)
@@ -249,6 +252,24 @@ def main():
     console.print(Panel("Sending request to LLM...", style="bold yellow"))
     response = send_query(prompt)
     apply_changes(response, git_diff)
+
+
+def get_prompt_value(key: str) -> str:
+    """Helper to get values from prompt.yaml with proper error handling."""
+    try:
+        import yaml
+        with open("prompt.yaml") as f:
+            prompts = yaml.safe_load(f)
+        return prompts[key]
+    except FileNotFoundError:
+        console.print("[red]Error: prompt.yaml file not found[/red]")
+        exit(1)
+    except yaml.YAMLError as e:
+        console.print(f"[red]Error parsing YAML: {e}[/red]")
+        exit(1)
+    except KeyError:
+        console.print(f"[red]Error: '{key}' key not found in prompt.yaml[/red]")
+        exit(1)
 
 
 if __name__ == "__main__":
