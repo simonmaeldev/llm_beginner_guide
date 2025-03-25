@@ -155,14 +155,16 @@ def apply_suggestions(branch_name: str, suggestions: str, files_to_edit: list):
             ["git", "checkout", "-b", f"{branch_name}_suggestions"], check=True,
         )
 
-        model = Model("deepseek/deepseek-chat")
+        model = Model("deepseek/deepseek-coder")
         coder = Coder.create(main_model=model, fnames=files_to_edit)
 
         # Validate and apply suggestions
         console.print(Panel("LLM Suggestions:", style="bold yellow"))
         console.print(Syntax(suggestions, "python", theme="monokai"))
         if input("Apply these suggestions? (y/n): ").lower() == "y":
-            result = coder.run(suggestions)
+            # Added new system message here
+            system_msg = "You are a senior python developer. You've been provided with a code to review, and here is your analysis. Apply ALL the suggestions you made in one shot, starting with the most critic one (the lower the number, the higher the criticity).\n"
+            result = coder.run(system_msg + suggestions)
         else:
             result = "Suggestions not applied - user declined"
 
