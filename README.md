@@ -1,12 +1,28 @@
-# SyntaxSensei
+# Code Review Assistant
 
-SyntaxSensei is your AI-powered code review assistant. It analyzes code changes, provides fair and constructive criticism, and suggests improvements to help you write better code.
+A command-line tool that uses DeepSeek's LLM to analyze git diffs and suggest code improvements.
 
 ## Key Features:
-- Automated code reviews for pull requests
-- Intelligent suggestions for code improvements
-- Style and best practices guidance
-- Security and performance recommendations
-- Continuous learning from codebase patterns
+- Compares local changes against remote branch (origin/HEAD)
+- Shows complete file context from remote
+- Interactive suggestion application
+- Streaming LLM responses
+- Git integration for change management
 
-SyntaxSensei aims to be the wise mentor that helps developers grow while maintaining code quality.
+## Requirements:
+- Python 3.8+
+- Git installed
+- DEEPSEEK_API_KEY environment variable set
+
+## Usage:
+1. Make code changes locally
+2. Run `python main.py`
+3. Review the LLM's suggestions
+4. Choose whether to apply them
+
+The tool will:
+- Fetch latest changes from remote
+- Show the git diff
+- Get remote file contents for context
+- Send analysis to DeepSeek's API
+- Let you apply suggested changes
