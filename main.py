@@ -162,9 +162,10 @@ def apply_suggestions(branch_name: str, suggestions: str, files_to_edit: list):
         console.print(Panel("LLM Suggestions:", style="bold yellow"))
         console.print(Syntax(suggestions, "python", theme="monokai"))
         if input("Apply these suggestions? (y/n): ").lower() == "y":
-            # Added new system message here
-            system_msg = "You are a senior python developer. You've been provided with a code to review, and here is your analysis. Apply ALL the suggestions you made in one shot, starting with the most critic one (the lower the number, the higher the criticity).\n"
-            result = coder.run(system_msg + suggestions)
+            import yaml
+            with open("prompt.yaml") as f:
+                prompts = yaml.safe_load(f)
+            result = coder.run(prompts["system_msg"] + suggestions)
         else:
             result = "Suggestions not applied - user declined"
 
@@ -210,7 +211,10 @@ def prepare_prompt(git_diff: str, files_before: dict[str, str | None]) -> str:
     console.print(Panel.fit("", style="dim"))
 
     try:
-        prompt_template = Path("prompt.txt").read_text()
+        import yaml
+        with open("prompt.yaml") as f:
+            prompts = yaml.safe_load(f)
+        prompt_template = prompts["prompt_template"]
     except Exception as e:
         console.print(f"[red]Error loading prompt template: {e}[/red]")
         exit(1)
