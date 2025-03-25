@@ -21,7 +21,7 @@ def send_query(prompt: str) -> str:
             
         client = OpenAI(
             api_key=api_key,
-            base_url="https://api.deepseek.com"
+            base_url=os.getenv("DEEPSEEK_API_URL", "https://api.deepseek.com")
         )
         
         console.print(Panel("LLM Response:", style="bold green"))
@@ -53,7 +53,9 @@ def send_query(prompt: str) -> str:
         console.print(f"[red]Error occurred: {str(e)}[/red]")
         return f"Error occurred: {str(e)}"
 
-def get_remote_files_content(diff_output: str) -> dict:
+from typing import Dict, Optional
+
+def get_remote_files_content(diff_output: str) -> Dict[str, Optional[str]]:
     """Get the content of all files in the diff from remote"""
     file_contents = {}
     
@@ -115,7 +117,10 @@ def get_git_diff():
         return diff_output if diff_output else "No differences found"
     
     except subprocess.CalledProcessError as e:
-        return f"Error occurred: {e.stderr if e.stderr else e.stdout}"
+        error_msg = f"Git command failed: {e.cmd}\n"
+        error_msg += f"Return code: {e.returncode}\n"
+        error_msg += f"Error output: {e.stderr if e.stderr else e.stdout}"
+        return error_msg
 
 def apply_suggestions(branch_name: str, suggestions: str, files_to_edit: list):
     try:
@@ -141,8 +146,13 @@ def apply_suggestions(branch_name: str, suggestions: str, files_to_edit: list):
         model = Model("deepseek/deepseek-chat")
         coder = Coder.create(main_model=model, fnames=files_to_edit)
         
-        # Apply suggestions
-        result = coder.run(suggestions)
+        # Validate and apply suggestions
+        console.print(Panel("LLM Suggestions:", style="bold yellow"))
+        console.print(Syntax(suggestions, "python", theme="monokai"))
+        if input("Apply these suggestions? (y/n): ").lower() == 'y':
+            result = coder.run(suggestions)
+        else:
+            result = "Suggestions not applied - user declined"
         
         # Show status instead of committing
         console.print(Panel("Changes applied. Here's the git status:", style="bold green"))
@@ -159,52 +169,43 @@ def apply_suggestions(branch_name: str, suggestions: str, files_to_edit: list):
     except Exception as e:
         return f"Error applying suggestions: {str(e)}"
 
-if __name__ == "__main__":
-    # Get git diff
+def get_changes() -> tuple[str, Dict[str, Optional[str]]]:
+    """Get git diff and remote files content"""
     console.print(Panel("Getting git diff...", style="bold blue"))
     git_diff = get_git_diff()
     
     if git_diff.startswith("Error"):
-        console.print(f"[red]{git_diff}[/red]")
-        exit(1)
+        return git_diff, {}
     
-    # Get remote files content
     console.print(Panel("Getting remote files content...", style="bold blue"))
     files_before = get_remote_files_content(git_diff)
-    
-    # Format files content for prompt
+    return git_diff, files_before
+
+def prepare_prompt(git_diff: str, files_before: Dict[str, Optional[str]]) -> str:
+    """Prepare the LLM prompt with diff and file contents"""
     files_before_str = "\n\n".join(
         f"File: {path}\n{content if content else 'New file'}"
         for path, content in files_before.items()
     )
     
-    # Show the diff
     console.print(Panel("Git diff:", style="bold green"))
     console.print(Syntax(git_diff, "diff", theme="monokai", line_numbers=True))
     console.print(Panel.fit("", style="dim"))
     
-    # Load prompt template
     try:
         prompt_template = Path("prompt.txt").read_text()
     except Exception as e:
         console.print(f"[red]Error loading prompt template: {e}[/red]")
         exit(1)
     
-    # Format prompt with git diff and files content
-    prompt = prompt_template.format(
+    return prompt_template.format(
         git_diff=git_diff,
         files_before=files_before_str
     )
-    
-    # Send query to LLM
-    console.print(Panel("Sending request to LLM...", style="bold yellow"))
-    response = send_query(prompt)
-    
-    # Get list of files to edit from the diff
+
+def apply_changes(response: str, git_diff: str) -> None:
+    """Apply the LLM suggestions to files"""
     files_to_edit = list(get_remote_files_content(git_diff).keys())
-    
-    # Apply suggestions
-    console.print(Panel("Applying suggestions...", style="bold blue"))
     branch_name = subprocess.check_output(
         ['git', 'rev-parse', '--abbrev-ref', 'HEAD'],
         stderr=subprocess.STDOUT
@@ -213,3 +214,18 @@ if __name__ == "__main__":
     apply_result = apply_suggestions(branch_name, response, files_to_edit)
     console.print(Panel("Application result:", style="bold green"))
     console.print(apply_result)
+
+def main():
+    """Main execution flow"""
+    git_diff, files_before = get_changes()
+    if git_diff.startswith("Error"):
+        console.print(f"[red]{git_diff}[/red]")
+        exit(1)
+
+    prompt = prepare_prompt(git_diff, files_before)
+    console.print(Panel("Sending request to LLM...", style="bold yellow"))
+    response = send_query(prompt)
+    apply_changes(response, git_diff)
+
+if __name__ == "__main__":
+    main()
