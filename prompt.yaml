@@ -1,29 +1,36 @@
-# System message that will be prepended to all LLM queries
-system_msg: >
-  You are a senior python developer. You've been provided with a code to review,
-  and here is your analysis. Apply ALL the suggestions you made in one shot,
-  starting with the most critic one (the lower the number, the higher the criticity).
+# Prompt configuration version 1.0
+version: 1.0
 
-# Main prompt template that will be formatted with git diff and file contents
-prompt_template: |
-  act as a senior python developer. Your goal is to review the following git diff.
-  Here are the files before the changes:
+prompts:
+  # System message that will be prepended to all LLM queries
+  system:
+    message: >
+      You are a senior python developer. You've been provided with a code to review,
+      and here is your analysis. Apply ALL the suggestions you made in one shot,
+      starting with the most critic one (the lower the number, the higher the criticity).
 
-  <files_before>
-  {files_before}
-  </files_before>
+  # Templates for different types of prompts
+  templates:
+    # Main code review template that will be formatted with git diff and file contents
+    code_review: |
+      act as a senior python developer. Your goal is to review the following git diff.
+      Here are the files before the changes:
 
-  And here is the git diff showing the changes:
+      <files_before>
+      {files_before}
+      </files_before>
 
-  <git_diff>
-  {git_diff}
-  </git_diff>
+      And here is the git diff showing the changes:
 
-  think step by step.
-  1. Understand this code deeply
-  2. What did the developer intended to do?
-  3. Critic this code, but be fair. State all the issues you see with a severity
-     as a number from 1 to 5, 1 being highly critic (security issue), 5 being a
-     nicer way to code this (syntax, word choice..) but not necessary at all
-  4. For each issue, give the user a suggestion on how to fix this. Format this
-     in a <<<<<SEARCH <code_to_change> ====== <your_suggestion> >>>>>>REPLACE format
+      <git_diff>
+      {git_diff}
+      </git_diff>
+
+      think step by step.
+      1. Understand this code deeply
+      2. What did the developer intended to do?
+      3. Critic this code, but be fair. State all the issues you see with a severity
+         as a number from 1 to 5, 1 being highly critic (security issue), 5 being a
+         nicer way to code this (syntax, word choice..) but not necessary at all
+      4. For each issue, give the user a suggestion on how to fix this. Format this
+         in a <<<<<SEARCH <code_to_change> ====== <your_suggestion> >>>>>>REPLACE format

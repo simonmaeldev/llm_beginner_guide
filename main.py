@@ -1,5 +1,6 @@
 import os
 import subprocess
+import yaml
 from pathlib import Path
 
 from aider.coders import Coder
@@ -162,7 +163,7 @@ def apply_suggestions(branch_name: str, suggestions: str, files_to_edit: list):
         console.print(Panel("LLM Suggestions:", style="bold yellow"))
         console.print(Syntax(suggestions, "python", theme="monokai"))
         if input("Apply these suggestions? (y/n): ").lower() == "y":
-            result = coder.run(get_prompt_value("system_msg") + suggestions)
+            result = coder.run(get_prompt_value("system.message") + suggestions)
         else:
             result = "Suggestions not applied - user declined"
 
@@ -208,10 +209,8 @@ def prepare_prompt(git_diff: str, files_before: dict[str, str | None]) -> str:
     console.print(Panel.fit("", style="dim"))
 
     try:
-        import yaml
-        with open("prompt.yaml") as f:
-            prompts = yaml.safe_load(f)
-        prompt_template = prompts["prompt_template"]
+        prompts = load_yaml_config()
+        prompt_template = prompts["prompts"]["templates"]["code_review"]
     except FileNotFoundError:
         console.print("[red]Error: prompt.yaml file not found[/red]")
         exit(1)
@@ -254,19 +253,25 @@ def main():
     apply_changes(response, git_diff)
 
 
-def get_prompt_value(key: str) -> str:
-    """Helper to get values from prompt.yaml with proper error handling."""
+def load_yaml_config() -> dict:
+    """Shared YAML loading function with consistent error handling."""
     try:
         import yaml
         with open("prompt.yaml") as f:
-            prompts = yaml.safe_load(f)
-        return prompts[key]
+            return yaml.safe_load(f)
     except FileNotFoundError:
         console.print("[red]Error: prompt.yaml file not found[/red]")
         exit(1)
     except yaml.YAMLError as e:
         console.print(f"[red]Error parsing YAML: {e}[/red]")
         exit(1)
+
+def get_prompt_value(key: str) -> str:
+    """Helper to get values from prompt.yaml with proper error handling."""
+    try:
+        prompts = load_yaml_config()
+        # Access nested structure: prompts -> prompts -> category -> key
+        return prompts["prompts"][key.split('.')[0]][key.split('.')[1] if '.' in key else "message"]
     except KeyError:
         console.print(f"[red]Error: '{key}' key not found in prompt.yaml[/red]")
         exit(1)
